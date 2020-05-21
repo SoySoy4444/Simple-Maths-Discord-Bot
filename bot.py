@@ -29,6 +29,22 @@ answer_ = "XXXXadsadsasasdsadas"
 usersPlaying = {}
 
 
+def get_question(difficulty):  # difficulty is an integer from 1 - 10
+    lower_bound = 2
+    upper_bound = (difficulty + 2) * 2  # 6 (level 1) - 24 (level 10)
+
+    operators = ["+", "*", "-"]
+    question = ""
+    question += str(random.randint(lower_bound, upper_bound))
+
+    for _ in range(difficulty//2):
+        number = str(random.randint(lower_bound, upper_bound))
+        operation = random.choice(operators)
+        question += operation + number
+
+    return question
+
+
 @client.event
 async def on_message(message):
     for guild in client.guilds:
@@ -41,7 +57,7 @@ async def on_message(message):
     if message.content == "!maths":
         usersPlaying = {}
         await message.channel.send("Starting new game... enter !quit to quit game.")
-        question = "4 + 3 + 4"
+        question = get_question(3)
         await message.channel.send(question)
         answer_ = eval(question)
 
@@ -53,14 +69,7 @@ async def on_message(message):
             usersPlaying[correct_user] += 1  # increase the user's score
         else:
             usersPlaying[correct_user] = 1  # start tracking user score
-
-        n1 = str(random.randint(3, 9))
-        n2 = str(random.randint(3, 9))
-        n3 = str(random.randint(3, 9))
-        operators = ["+", "*", "-"]
-        o1 = random.choice(operators)
-        o2 = random.choice(operators)
-        question = f"{n1} {o1} {n2} {o2} {n3}"
+        question = get_question(5)
         await message.channel.send(question)
         answer_ = eval(question)
 
