@@ -6,6 +6,7 @@ import os
 import discord
 from dotenv import load_dotenv
 import random
+import asyncio
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -25,8 +26,8 @@ async def on_ready():
     print(f'Guild Members:\n - {members}')
 
 
-answer_ = "XXXXadsadsasasdsadas"
 usersPlaying = {}
+playing = False
 
 
 def get_question(difficulty):  # difficulty is an integer from 1 - 10
@@ -51,29 +52,41 @@ async def on_message(message):
         if guild.name == GUILD:
             break
 
-    global answer_
     global usersPlaying
+    global playing
 
     if message.content == "!maths":
+        game_channel = message.channel
+
+        playing = True
         usersPlaying = {}
+        time_limit = 10.0
         await message.channel.send("Starting new game... enter !quit to quit game.")
-        question = get_question(3)
-        await message.channel.send(question)
-        answer_ = eval(question)
 
-    elif message.content == str(answer_):
-        await message.channel.send(f"Correct! It's {str(answer_)}!")
-        correct_user = message.author  # get the user who answered correctly
+        def wait_for_correct_answer(m):
+            # check answer is correct and is sent in the game channel
+            return m.content == str(answer_) and m.channel == game_channel
 
-        if correct_user in usersPlaying.keys():  # if the answer is already in the database
-            usersPlaying[correct_user] += 1  # increase the user's score
-        else:
-            usersPlaying[correct_user] = 1  # start tracking user score
-        question = get_question(5)
-        await message.channel.send(question)
-        answer_ = eval(question)
+        while playing:
+            question = get_question(3)
+            await game_channel.send(question)
+            answer_ = eval(question)
+            try:
+                reply = await client.wait_for('message', timeout=time_limit, check=wait_for_correct_answer)
+                # if execution continues to here, user has gotten it correct
+                await game_channel.send(f"Correct! It's {str(answer_)}!")
+
+                correct_user = reply.author  # get the user who answered correctly
+                if correct_user in usersPlaying.keys():  # if the answer is already in the database
+                    usersPlaying[correct_user] += 1  # increase the user's score
+                else:
+                    usersPlaying[correct_user] = 1  # start tracking user score
+            except asyncio.TimeoutError:
+                if playing:
+                    await game_channel.send(f"Too slow! The answer was {answer_}!")
 
     elif message.content == "!quit":
+        playing = False
         await message.channel.send("Thanks for playing!")
 
         current_max_user, current_max_score = None, -1
