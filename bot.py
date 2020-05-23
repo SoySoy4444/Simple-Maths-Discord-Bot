@@ -48,6 +48,9 @@ def get_question(difficulty):  # difficulty is an integer from 1 - 10
 
 @client.event
 async def on_message(message):
+    if message.author == client.user:
+        return
+
     for guild in client.guilds:
         if guild.name == GUILD:
             break
@@ -89,7 +92,7 @@ async def on_message(message):
         playing = False
         await message.channel.send("Thanks for playing!")
 
-        current_max_user, current_max_score = None, -1
+        current_max_user, current_max_score = None, 0
         for user, score in usersPlaying.items():
             if score > current_max_score:
                 current_max_user, current_max_score = user, score
